@@ -11,20 +11,37 @@
     <!-- Marked.js for Markdown parsing -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="style.css?v=2">
+    <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body class="dark-theme">
-    <div class="app-container">
+    <!-- Dashboard Screen -->
+    <div id="dashboard" class="dashboard active">
+        <div class="dashboard-header">
+            <h1>Seleziona Profilo</h1>
+        </div>
+        <div class="profile-cards">
+            <div class="profile-card" onclick="selectProfile('sal')">
+                <div class="profile-avatar">🧑‍💻</div>
+                <h2>SAL</h2>
+                <p>SOC Analyst</p>
+            </div>
+            <div class="profile-card" onclick="selectProfile('elisa')">
+                <div class="profile-avatar">👩‍⚕️</div>
+                <h2>ELISA</h2>
+                <p>Medicina Pediatrica</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container (Hidden initially) -->
+    <div class="app-container" id="app-container" style="display: none;">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
-                    <span class="icon">🛡️</span>
-                    <h1>SOC Study Hub</h1>
+                    <span class="icon" id="sidebar-icon">🛡️</span>
+                    <h1 id="sidebar-title">SOC Study Hub</h1>
                 </div>
-                <button id="mobile-menu-btn" class="mobile-menu-btn">
-                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-                </button>
             </div>
             
             <div class="search-container">
@@ -37,6 +54,12 @@
                 <ul id="doc-list" class="doc-list">
                     <!-- Populated by JS -->
                 </ul>
+                
+                <p class="nav-title" style="margin-top: 20px;">I Miei Riassunti</p>
+                <ul id="summary-list" class="doc-list">
+                    <!-- Populated by JS -->
+                </ul>
+
                 <div class="progress-container">
                     <p class="progress-title">Progresso Studio</p>
                     <div class="progress-bar-bg">
@@ -50,8 +73,17 @@
         <!-- Main Content -->
         <main class="main-content">
             <header class="content-header">
-                <h2 id="current-doc-title">Seleziona un argomento</h2>
+                <div class="mobile-header-left">
+                    <button id="mobile-back-btn" class="icon-btn" style="display: none;" onclick="goBackToList()">
+                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
+                    <h2 id="current-doc-title">Seleziona un argomento</h2>
+                </div>
                 <div class="header-actions">
+                    <button id="cart-btn" class="btn btn-outline cart-btn" title="Vedi argomenti selezionati">
+                        <span class="cart-icon">🛒</span>
+                        <span id="cart-count" class="cart-badge">0</span>
+                    </button>
                     <button id="mark-done-btn" class="btn btn-outline" style="display: none;">
                         <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         Segna come letto
@@ -84,6 +116,53 @@
                 <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
             </button>
         </main>
+        
+        <!-- Bottom Navigation Bar (Visible only on mobile) -->
+        <nav class="bottom-nav">
+            <button class="bottom-nav-item active" id="nav-topics" onclick="switchMobileTab('topics')">
+                <span class="icon">📚</span>
+                <span class="label">Argomenti</span>
+            </button>
+            <button class="bottom-nav-item" id="nav-summaries" onclick="switchMobileTab('summaries')">
+                <span class="icon">📝</span>
+                <span class="label">Riassunti</span>
+            </button>
+            <button class="bottom-nav-item" id="nav-cart" onclick="openSummaryModal()">
+                <span class="icon">🛒</span>
+                <span class="label">Carrello</span>
+                <span id="cart-count-mobile" class="cart-badge-mobile" style="display: none;">0</span>
+            </button>
+            <button class="bottom-nav-item" onclick="showDashboard()">
+                <span class="icon">👤</span>
+                <span class="label">Profilo</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Summary Modal -->
+    <div id="summary-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🛒 Generatore Riassunto</h3>
+                <button id="close-modal-btn" class="icon-btn" aria-label="Chiudi">
+                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="cart-desc">Hai selezionato i seguenti argomenti da includere nel riassunto:</p>
+                <ul id="cart-items" class="cart-items-list">
+                    <!-- Populated by JS -->
+                </ul>
+                <div class="modal-input-group">
+                    <label for="summary-title">Nome del Riassunto:</label>
+                    <input type="text" id="summary-title" placeholder="Es. Riassunto Networking">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="clear-cart-btn" class="btn btn-outline" style="color: var(--danger-color); border-color: var(--danger-color);">Svuota</button>
+                <button id="save-summary-btn" class="btn">Salva Riassunto</button>
+            </div>
+        </div>
     </div>
 
     <!-- Custom JS -->
